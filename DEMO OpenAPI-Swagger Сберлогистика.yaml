@@ -1,0 +1,2949 @@
+openapi: 3.0.3
+info:
+  title: Платформа отслеживания Сберлогистики
+  description: "**Платформа отслеживания Сберлогистики (Трекинг статусов)** — это сервис отслеживания отправлений и их вложений, позволяющий внешним и внутренним потребителям получать достоверные и актуальные данные о значимых событиях, зафиксированных логистическими системами, задействованными в процессах операционной и информационной обработки."
+  version: 1.32.0
+servers:
+- url: https://apilive.sblogistica.ru/tracking
+  description: Prod
+- url: https://apitest.sblogistica.ru/tracking
+  description: Test
+security:
+- ProdEnvironment: []
+- TestEnvironment: []
+tags:
+- name: history
+  description: История статусов отправлений
+- name: report
+  description: Отчет об истории статусов массива отправлений
+- name: webhook
+  description: Подписка на информирование о переходе отправлений в ожидаемый статус
+- name: representation
+  description: Параметры настроек представлений
+paths:
+  /v2.0/shipment/{id}/history:
+    get:
+      tags:
+      - history
+      summary: Запрос истории изменений статусов отправления
+      description: Метод getShipmentHistory
+      operationId: getShipmentHistory
+      parameters:
+      - name: id
+        in: path
+        description: "Трек-номер, клиентский номер заказа, суррогатный штрихкод (СШК) или номер телефона"
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        example: RP257494384
+      - name: scheme_id
+        in: query
+        description: Идентификатор представления
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: default
+          enum:
+          - default
+          - ui_public
+          - ui_mobile
+          - erm_default
+      - name: actual_only
+        in: query
+        description: Признак запроса актуального статуса
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: search_by_phone
+        in: query
+        description: Признак поиска по номеру телефона получателя
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: search_by_sender_phone
+        in: query
+        description: Признак поиска по номеру телефона отправителя
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: active_only
+        in: query
+        description: Признак поиска отправлений без терминальных статусов
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: return_included
+        in: query
+        description: Признак отслеживания отправления с историей связанного возвратного отправления
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockData'
+        "400":
+          description: Ошибка параметров запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/400_2001'
+                rsp2:
+                  $ref: '#/components/examples/400_2002'
+                rsp3:
+                  $ref: '#/components/examples/400_2008'
+                rsp4:
+                  $ref: '#/components/examples/400_2009'
+                rsp5:
+                  $ref: '#/components/examples/400_2010'
+                rsp6:
+                  $ref: '#/components/examples/400_2013'
+                rsp7:
+                  $ref: '#/components/examples/400_2015'
+                rsp8:
+                  $ref: '#/components/examples/400_2016'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4005'
+                rsp2:
+                  $ref: '#/components/examples/403_4007'
+                rsp3:
+                  $ref: '#/components/examples/403_4010'
+        "404":
+          description: Ошибка поиска отправления
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/404_'
+                rsp2:
+                  $ref: '#/components/examples/404_4001'
+                rsp3:
+                  $ref: '#/components/examples/404_4012'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+  /v2.0/shipment/history:
+    get:
+      tags:
+      - history
+      summary: Запрос истории изменений статусов массива отправлений
+      description: Метод getMultipleShipmentHistory
+      operationId: getMultipleShipmentHistory
+      parameters:
+      - name: ids
+        in: query
+        description: "Список из трек-номеров, клиентских номеров заказа, СШК и телефонных номеров (до 50 значений в запросе)"
+        required: true
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+        example:
+        - RP257407326
+        - RP257494384
+        - SLPU00381137RU
+        - SBC0008628890
+        - "79051234567"
+      - name: scheme_id
+        in: query
+        description: Идентификатор представления
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: default
+          enum:
+          - default
+          - ui_public
+          - ui_mobile
+          - erm_default
+      - name: actual_only
+        in: query
+        description: Признак запроса актуального статуса
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: search_by_phone
+        in: query
+        description: Признак поиска по номеру телефона получателя
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: search_by_sender_phone
+        in: query
+        description: Признак поиска по номеру телефона отправителя
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: active_only
+        in: query
+        description: Признак поиска отправлений без терминальных статусов
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: return_included
+        in: query
+        description: Признак отслеживания отправления с историей связанного возвратного отправления
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "400":
+          description: Ошибка параметров запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/400_2001'
+                rsp2:
+                  $ref: '#/components/examples/400_2002'
+                rsp3:
+                  $ref: '#/components/examples/400_2004'
+                rsp4:
+                  $ref: '#/components/examples/400_2008'
+                rsp5:
+                  $ref: '#/components/examples/400_2009'
+                rsp6:
+                  $ref: '#/components/examples/400_2010'
+                rsp7:
+                  $ref: '#/components/examples/400_2011'
+                rsp8:
+                  $ref: '#/components/examples/400_2013'
+                rsp9:
+                  $ref: '#/components/examples/400_2015'
+                rsp10:
+                  $ref: '#/components/examples/400_2016'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4005'
+                rsp2:
+                  $ref: '#/components/examples/403_4007'
+                rsp3:
+                  $ref: '#/components/examples/403_4010'
+        "404":
+          description: Ошибка поиска отправления
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/404_4001'
+                rsp2:
+                  $ref: '#/components/examples/404_4012'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+  /report/api/v1.0/shipment/report:
+    post:
+      tags:
+      - report
+      summary: Запрос на формирование отчета
+      description: Метод PostShipmentReport
+      operationId: PostShipmentReport
+      requestBody:
+        $ref: '#/components/requestBodies/ShipmentReportCreateRequest'
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+        "400":
+          description: Ошибка параметров запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/400_2001'
+                rsp2:
+                  $ref: '#/components/examples/400_2004'
+                rsp3:
+                  $ref: '#/components/examples/400_2005'
+                rsp4:
+                  $ref: '#/components/examples/400_2008'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4005'
+                rsp2:
+                  $ref: '#/components/examples/403_4007'
+                rsp3:
+                  $ref: '#/components/examples/403_4010'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "415":
+          description: Неверное значение content-type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/415_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+  /report/api/v1.0/shipment/report/state:
+    get:
+      tags:
+      - report
+      summary: Запрос информации о состоянии всех отчетов пользователя
+      description: Метод GetShipmentReportState
+      operationId: GetShipmentReportState
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_2'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4007'
+        "404":
+          description: Ошибка поиска отправления
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/404_4006'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+  /report/api/v1.0/shipment/report/{report_id}/state:
+    get:
+      tags:
+      - report
+      summary: Запрос информации о состоянии отчета
+      description: Метод GetShipmentReportIdState
+      operationId: GetShipmentReportIdState
+      parameters:
+      - name: report_id
+        in: path
+        description: Идентификатор сформированного отчета на отслеживание
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: UUID
+        example: f22e262a-2d2e-4fee-ac3d-d278a006a9f9
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4007'
+        "404":
+          description: Ошибка поиска отправления
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/404_4006'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+  /report/api/v1.0/shipment/report/{report_id}:
+    get:
+      tags:
+      - report
+      summary: Получение готового отчета
+      description: Метод GetShipmentReportId
+      operationId: GetShipmentReportId
+      parameters:
+      - name: report_id
+        in: path
+        description: Идентификатор сформированного отчета на отслеживание
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: UUID
+        example: f22e262a-2d2e-4fee-ac3d-d278a006a9f9
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_3'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4007'
+        "404":
+          description: Ошибка поиска отправления
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/404_4006'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+    delete:
+      tags:
+      - report
+      summary: Удаление отчета
+      description: Метод DeleteReportId
+      operationId: DeleteReportId
+      parameters:
+      - name: report_id
+        in: path
+        description: Идентификатор сформированного отчета на отслеживание
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: UUID
+        example: f22e262a-2d2e-4fee-ac3d-d278a006a9f9
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_4'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4007'
+        "404":
+          description: Ошибка поиска отправления
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/404_4006'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+  /webhook-api/api/v1.0/shipment/webhook:
+    get:
+      tags:
+      - webhook
+      summary: Запрос информации о состоянии всех текущих подписок  пользователя
+      description: Метод GetShipmentWebhook
+      operationId: GetShipmentWebhook
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_5'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4007'
+                rsp2:
+                  $ref: '#/components/examples/403_4011'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+    post:
+      tags:
+      - webhook
+      summary: Формирование подписки
+      description: Метод PostShipmentWebhook
+      operationId: PostShipmentWebhook
+      requestBody:
+        $ref: '#/components/requestBodies/CreateWebhookRequest'
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_6'
+        "400":
+          description: Ошибка параметров запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/400_2005'
+                rsp2:
+                  $ref: '#/components/examples/400_2006'
+                rsp3:
+                  $ref: '#/components/examples/400_2007'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4005'
+                rsp2:
+                  $ref: '#/components/examples/403_4007'
+                rsp3:
+                  $ref: '#/components/examples/403_4011'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "409":
+          description: Конфликт
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/409_4009'
+        "415":
+          description: Неподдерживаемый тип данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/415_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+      callbacks:
+        ShipmentWebhookNewStatus:
+          http://webhook.com:
+            post:
+              summary: Отправка сообщения
+              description: "Процедура авторизации предполагает включение в заголовок запроса параметра *Authorization*, содержащего данные, соответствующие следующим типам авторизации:<br><ol><li>`oauth2` — авторизация c помощью jwt-токена, полученного от сервиса авторизации.<li>`basic` —  авторизация с помощью логина и пароля пользователя.</ol>Сервисом авторизации может являться как ИПК Сберлогистики, так и соответствующий сервис на стороне клиента.<br><br>Настройки типа и параметров авторизации, применяемые при вызове метода *ShipmentWebhookNewStatus*, сохраняются в Системе в соответствующем профиле клиента (client-id).<br><br>При авторизации через ИПК регистрируется отдельная учетная запись для сервиса подписок, которая используется для всех клиентов. Подпись можно проверить с помощью публичного ключа, выдаваемого сервисом авторизации ИПК: <https://authlive.sblogistica.ru/auth/realms/public/protocol/openid-connect/certs>.<br><br>Для подтверждения доставки сообщения клиенту Сервис анализирует только http-код ответа:<ol><li>**Успешный.** Сообщение доставлено.</li><ul><li>Коды `2ХХ`.</li></ul><li>**Переотправляемый.** Сообщение будет отправлено повторно. Попытки отправки будут производиться каждые 10 минут в течение 48 часов. Чтобы сохранить правильную последовательность переходов отправлений из одного статуса в другой, все сообщения о последующих изменениях статусов отправления задерживаются до момента успешной доставки сообщения о предыдущем статусе отправления.</li><ul><li>Коды `400`, `401`, `403`, `409`, `412`, `417`, `423`, `428`, `429`, `500`, `502`, `503`, `504`, `509`;</li><li>либо ответ от клиентского сервиса не получен в течение 90 секунд после запроса;</li><li>либо клиентский сервис недоступен.</li></ul><li>**Непереотправляемый.** Сообщение не следует отправлять повторно.</li><ul><li>Коды, не входящие в группы 1 и 2.</li></ul></ol>"
+              operationId: ShipmentWebhookNewStatus
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/CreateWebhookResponse'
+                required: true
+              responses:
+                "200":
+                  description: OK
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          result:
+                            type: string
+                            example: SUCCESS
+  /webhook-api/api/v1.0/shipment/webhook/{webhook_id}:
+    get:
+      tags:
+      - webhook
+      summary: Запрос информации о состоянии подписки
+      description: Метод GetShipmentWebhookId
+      operationId: GetShipmentWebhookId
+      parameters:
+      - name: webhook_id
+        in: path
+        description: Идентификатор подписки
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: UUID
+        example: f22e262a-2d2e-4fee-ac3d-d278a006a9f9
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_7'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4007'
+                rsp2:
+                  $ref: '#/components/examples/403_4011'
+        "404":
+          description: Ошибка поиска отправления
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/404_4008'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+    delete:
+      tags:
+      - webhook
+      summary: Удаление подписки
+      description: Метод DeleteShipmentWebhookId
+      operationId: DeleteShipmentWebhookId
+      parameters:
+      - name: webhook_id
+        in: path
+        description: Идентификатор подписки
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: UUID
+        example: f22e262a-2d2e-4fee-ac3d-d278a006a9f9
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_8'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4007'
+                rsp2:
+                  $ref: '#/components/examples/403_4011'
+        "404":
+          description: Ошибка поиска отправления
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/404_4008'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+  /representation/api/v1.0/representation/status:
+    get:
+      tags:
+      - representation
+      summary: "Получение параметров представлений, доступных пользователю"
+      description: Метод getRepresentationStatuses
+      operationId: getRepresentationStatuses
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepresentationListResponse'
+        "400":
+          description: Ошибка параметров запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/400_2001'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4005'
+                rsp2:
+                  $ref: '#/components/examples/403_4007'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+  /representation/api/v1.0/representation/{scheme_id}/status:
+    get:
+      tags:
+      - representation
+      summary: "Получение списка статусов, входящих в представление"
+      description: Метод getRepresentationStatusesBySchemeId
+      operationId: getRepresentationStatusesBySchemeId
+      parameters:
+      - name: scheme_id
+        in: path
+        description: Идентификатор представления
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          example: default
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepresentationResponse'
+        "400":
+          description: Ошибка параметров запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/400_2001'
+        "401":
+          description: Ошибка авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/401_4003'
+        "403":
+          description: Ошибка доступа для авторизованных запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/403_4005'
+                rsp2:
+                  $ref: '#/components/examples/403_4007'
+        "405":
+          description: Неверный метод запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/405_'
+        "406":
+          description: Неверный формат ресурса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/406_'
+        "500":
+          description: Ошибка работы системы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockError'
+              examples:
+                rsp1:
+                  $ref: '#/components/examples/500_'
+components:
+  schemas:
+    BlockWarning:
+      type: object
+      properties:
+        warning:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+      description: Раздел с информацией о предупреждениях
+    BlockError:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
+      description: Раздел с информацией об ошибке
+    BlockData:
+      required:
+      - data
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Data'
+      description: Раздел с информацией об отправлениях
+    BlockWebhookData:
+      required:
+      - webhook
+      type: object
+      properties:
+        webhook:
+          $ref: '#/components/schemas/BaseWebhookData'
+      description: Раздел с информацией о подписке
+    Warning:
+      required:
+      - code
+      - id
+      - message
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор отправления
+          example: RP20755472
+        code:
+          type: integer
+          description: Код предупреждения
+          format: int32
+          example: 4001
+        message:
+          type: string
+          description: Текст предупреждения
+          example: Shipment not found
+      description: Информация о предупреждении
+    Data:
+      type: object
+      description: Информация об отправлении и истории его статусов
+      allOf:
+      - $ref: '#/components/schemas/TrackNumbers'
+      - properties:
+          attributes:
+            $ref: '#/components/schemas/Attributes'
+          statuses:
+            type: array
+            items:
+              $ref: '#/components/schemas/Status'
+    Error:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          description: Время обработки запроса
+          format: date-time
+          example: 2022-03-30T13:01:45+03:00
+        status:
+          type: integer
+          description: Статус HTTP-ответа
+          format: int32
+          example: 404
+        error:
+          type: string
+          description: Описание статуса HTTP-ответа
+          example: Not Found
+        code:
+          type: integer
+          description: Внутренний код ошибки
+          format: int32
+          example: 4001
+        message:
+          type: string
+          description: Описание внутренней ошибки
+          example: Shipment not found
+        path:
+          type: string
+          description: Строка запроса
+          example: /v2.0/shipment/RP260190272/history?scheme_id=ui_public
+      description: Информация об ошибке
+    Attributes:
+      type: object
+      properties:
+        created_time:
+          type: string
+          description: Время и дата создания отправления
+          format: date-time
+          example: 2022-03-30T13:01:45+03:00
+        registered_time:
+          type: string
+          description: Время и дата приема отправления на складе приема
+          format: date-time
+          example: 2022-03-30T13:01:45+03:00
+        shipment_type:
+          type: string
+          description: Тип отправления
+          example: multipackage
+          enum:
+          - multipackage
+          - package
+          - standard
+          - fullfilment
+          - through
+        multipackage_tracking_number:
+          type: string
+          description: Идентификатор заказа (родительского отправления отслеживаемого места)
+          example: RP260190273
+        return_tracking_number:
+          type: string
+          description: Номер отслеживания связанного возвратного отправления
+          example: RP260190274
+        return_package_tracking_numbers:
+          type: array
+          description: Номера отслеживания связанных возвратных мест отправления
+          example:
+          - RP260190275
+          - RP260190276
+          items:
+            type: string
+        previous_tracking_number:
+          type: string
+          description: "Номер отслеживания связанного прямого отправления, из которого было создано возвратное"
+          example: RP260190270
+        surrogate_barcode:
+          type: string
+          description: Суррогатный штрихкод отправления (СШК)
+          example: SBC0008628890
+        courier_order_number:
+          type: string
+          description: Номер курьерского сбора отправления
+          example: S479278
+        cod:
+          type: integer
+          description: Наложенный платеж
+          format: int32
+          example: 12345
+        declared_value:
+          type: integer
+          description: Объявленная ценность/оценочная стоимость
+          format: int32
+          example: 1200
+        cod_type:
+          type: string
+          description: Тип оплаты наложенного платежа
+          example: transfer
+        storage_expiration_time:
+          type: string
+          description: Окончание срока хранения
+          format: date-time
+          example: 2022-04-20T12:01:45+03:00
+        weight_and_dimensions:
+          $ref: '#/components/schemas/WeightAndDimensions'
+        delivery_method:
+          $ref: '#/components/schemas/DeliveryMethod'
+        sender:
+          $ref: '#/components/schemas/Sender'
+        recipient:
+          $ref: '#/components/schemas/Recipient'
+        packages:
+          $ref: '#/components/schemas/Packages'
+        items:
+          $ref: '#/components/schemas/Items'
+        services:
+          $ref: '#/components/schemas/Services'
+        locations:
+          $ref: '#/components/schemas/Locations'
+      description: Блок информации об отправлении
+    AttributesItems:
+      type: object
+      properties:
+        created_time:
+          type: string
+          description: Время и дата создания отправления
+          format: date-time
+          example: 2022-03-30T13:01:45+03:00
+        cod:
+          type: integer
+          description: Наложенный платеж
+          format: int32
+          example: 12345
+        declared_value:
+          type: integer
+          description: Объявленная ценность/оценочная стоимость
+          format: int32
+          example: 1200
+        weight_and_dimensions:
+          $ref: '#/components/schemas/WeightAndDimensions'
+        items:
+          $ref: '#/components/schemas/Items'
+      description: Блок информации об атрибутах места заказа
+    AttributesStatuses:
+      type: object
+      properties:
+        multipackage_tracking_number:
+          type: string
+          description: Идентификатор заказа (родительского отправления отслеживаемого места)
+          example: RP260190273
+        return_tracking_number:
+          type: string
+          description: Номер отслеживания связанного возвратного отправления
+          example: RP260190274
+        return_package_tracking_numbers:
+          type: array
+          description: Номера отслеживания связанных возвратных мест отправления
+          example:
+          - RP260190275
+          - RP260190276
+          items:
+            type: string
+        previous_tracking_number:
+          type: string
+          description: "Номер отслеживания связанного прямого отправления, из которого было создано возвратное"
+          example: RP260190270
+        surrogate_barcode:
+          type: string
+          description: Суррогатный штрихкод отправления (СШК)
+          example: SBC0008628890
+        courier_order_number:
+          type: string
+          description: Номер курьерского сбора отправления
+          example: S479278
+        shipment_type:
+          type: string
+          description: Тип отправления
+          example: multipackage
+          enum:
+          - multipackage
+          - package
+          - standard
+          - fullfilment
+          - through
+        buyout:
+          type: string
+          description: Показатель полноты выкупа товаров отправления
+          example: PART
+          enum:
+          - FULL
+          - RETURN
+          - PART
+        cod:
+          type: integer
+          description: Наложенный платеж
+          format: int32
+          example: 12345
+        declared_value:
+          type: integer
+          description: Объявленная ценность/оценочная стоимость
+          format: int32
+          example: 1200
+        cod_type:
+          type: string
+          description: Тип оплаты наложенного платежа
+          example: transfer
+        weight_and_dimensions:
+          $ref: '#/components/schemas/WeightAndDimensions'
+        delivery_method:
+          $ref: '#/components/schemas/DeliveryMethod'
+        sender:
+          $ref: '#/components/schemas/Sender'
+        recipient:
+          $ref: '#/components/schemas/Recipient'
+        services:
+          $ref: '#/components/schemas/Services'
+      description: Блок информации об атрибутах события
+    TrackNumbers:
+      required:
+      - tracking_number
+      type: object
+      properties:
+        internal_id:
+          type: string
+          description: Внутренний системный идентификатор отправления
+          example: "260190272"
+        tracking_number:
+          type: string
+          description: Номер отслеживания отправления
+          example: RP260190272
+        client_tracking_number:
+          type: string
+          description: Внешний (клиентский) номер отправления (заказа)
+          example: SBR20210915135054
+        partner_tracking_number:
+          type: string
+          description: Внешний (партнерский) номер отслеживания отправления
+          example: "20230111135079"
+        customer_order_number:
+          type: string
+          description: Номер заказа покупателя
+          example: "109151350"
+      description: Блок трек-номеров
+    WeightAndDimensions:
+      type: object
+      properties:
+        weight:
+          type: integer
+          description: "Вес отправления, г"
+          format: int32
+          example: 25065
+        length:
+          type: integer
+          description: "Длина отправления, мм"
+          format: int32
+          example: 4900
+        width:
+          type: integer
+          description: "Ширина отправления, мм"
+          format: int32
+          example: 4220
+        height:
+          type: integer
+          description: "Высота отправления, мм"
+          format: int32
+          example: 2050
+      description: Весогабаритные характеристики (ВГХ) отправления
+    DeliveryMethod:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор логистического продукта
+          example: sber_courier
+        name:
+          type: string
+          description: Наименование логистического продукта
+          example: Сберкурьер
+        category:
+          type: string
+          description: Категория метода доставки
+          example: delivery-point
+        planned_delivery_date:
+          type: string
+          description: Назначенная дата доставки
+          format: date
+          example: 2022-02-17
+        planned_delivery_time:
+          type: string
+          description: Назначенное время доставки
+          example: 10-18
+        planned_delivery_date_changed_initiator:
+          type: string
+          description: Инициатор переноса даты доставки
+          example: receiver
+        planned_delivery_date_changed_comment:
+          type: string
+          description: Комментарий по переносу даты доставки
+          example: Согласовано
+        control_delivery_date:
+          type: string
+          description: Контрольная дата доставки
+          format: date
+          example: 2022-11-17
+        return_group_type:
+          type: string
+          description: Тип возвратной партии
+          example: self-pickup
+          enum:
+          - courier
+          - self-pickup
+        return_method:
+          type: boolean
+          description: Признак возвратного метода доставки
+          example: false
+      description: Способ доставки отправления
+    Sender:
+      type: object
+      properties:
+        company_name:
+          type: string
+          description: Наименование отправителя
+          example: Marketplace (ФК)
+        company_id:
+          type: string
+          description: Идентификатор юридического лица
+          example: "155789"
+        company_user_id:
+          type: string
+          description: Идентификатор пользователя-представителя юридического лица
+          example: "101795"
+        company_user_type:
+          type: string
+          description: Тип пользователя-отправителя
+          example: legal
+          enum:
+          - individual
+          - legal
+        company_inn:
+          type: string
+          description: ИНН юридического лица
+          example: "9701048328"
+        company_kpp:
+          type: string
+          description: КПП юридического лица
+          example: "770101001"
+        address:
+          $ref: '#/components/schemas/AddressSnd'
+        delivery_point:
+          $ref: '#/components/schemas/DeliveryPoint'
+        contact_person:
+          $ref: '#/components/schemas/ContactPerson'
+      description: Информация об отправителе
+    Recipient:
+      type: object
+      properties:
+        address:
+          $ref: '#/components/schemas/AddressRcp'
+        delivery_point:
+          $ref: '#/components/schemas/DeliveryPoint'
+        contact_person:
+          $ref: '#/components/schemas/ContactPerson'
+      description: Информация о получателе
+    Packages:
+      type: array
+      description: Места заказа
+      items:
+        $ref: '#/components/schemas/Packages_inner'
+    Items:
+      type: array
+      description: Информация о товарах
+      items:
+        $ref: '#/components/schemas/Items_inner'
+    Supplier:
+      type: object
+      properties:
+        inn:
+          type: string
+          description: ИНН поставщика
+          example: "7717691259"
+        name:
+          type: string
+          description: Наименование поставщика
+          example: Гипермаркет Колесо
+        phone:
+          type: string
+          description: Телефон поставщика
+          example: "78126543456"
+      description: Раздел информации о поставщике
+    Services:
+      type: array
+      description: Раздел информации об услугах
+      items:
+        $ref: '#/components/schemas/Services_inner'
+    Locations:
+      type: object
+      properties:
+        origin_facility:
+          $ref: '#/components/schemas/OriginFacility'
+        current_facility:
+          $ref: '#/components/schemas/CurrentFacility'
+        destination_facility:
+          $ref: '#/components/schemas/DestinationFacility'
+        return_facility:
+          $ref: '#/components/schemas/ReturnFacility'
+      description: Информация о локациях обработки отправления
+    OriginFacility:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Идентификатор склада приема
+          format: int32
+          example: 100
+        slug:
+          type: string
+          description: slug-идентификатор склада приема
+          example: sha
+        type:
+          type: string
+          description: Тип склада приема
+          example: "001"
+        name:
+          type: string
+          description: Наименование склада приема
+          example: Склад № 1
+        address:
+          type: string
+          description: Адрес склада приема
+          example: "190000, Санкт-Петербург, Южная дорога, 5"
+      description: Раздел информации о складе приема
+    CurrentFacility:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Идентификатор текущего склада
+          format: int32
+          example: 200
+        slug:
+          type: string
+          description: slug-идентификатор текущего склада
+          example: hbr
+        type:
+          type: string
+          description: Тип текущего склада
+          example: "002"
+        name:
+          type: string
+          description: Наименование текущего склада
+          example: Склад № 2
+        address:
+          type: string
+          description: Адрес текущего склада
+          example: "190000, Санкт-Петербург, Северная дорога, 6"
+      description: Раздел информации о текущем складе
+    DestinationFacility:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Идентификатор склада вручения
+          format: int32
+          example: 300
+        slug:
+          type: string
+          description: slug-идентификатор склада вручения
+          example: bqs
+        type:
+          type: string
+          description: Тип склада вручения
+          example: "003"
+        name:
+          type: string
+          description: Наименование склада вручения
+          example: Склад № 3
+        address:
+          type: string
+          description: Адрес склада вручения
+          example: "190000, Санкт-Петербург, Западная дорога, 7"
+      description: Раздел информации о склада вручения
+    ReturnFacility:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Идентификатор склада возврата
+          format: int32
+          example: 400
+        slug:
+          type: string
+          description: slug-идентификатор склада возврата
+          example: sha
+        type:
+          type: string
+          description: Тип склада возврата
+          example: "004"
+        name:
+          type: string
+          description: Наименование склада возврата
+          example: Склад № 4
+        address:
+          type: string
+          description: Адрес склада возврата
+          example: "190000, Санкт-Петербург, Восточная дорога, 8"
+      description: Раздел информации о складе возврата
+    AddressSnd:
+      type: object
+      properties:
+        postcode:
+          type: string
+          description: Индекс
+          example: "196143"
+        region:
+          type: string
+          description: Область
+          example: Ленинградская обл.
+        city:
+          type: string
+          description: Город
+          example: г. Санкт-Петербург
+        street:
+          type: string
+          description: Улица
+          example: Петергофское ш.
+        house:
+          type: string
+          description: Дом
+          example: 17К
+        flat:
+          type: string
+          description: Квартира/офис
+          example: кв. 591
+        addressline:
+          type: string
+          description: Полная строка адреса
+          example: "196143, Ленинградская обл., г. Санкт-Петербург, Петергофское ш., 17К, кв. 591"
+      description: Информация об адресе отправителя
+    AddressRcp:
+      type: object
+      properties:
+        postcode:
+          type: string
+          description: Индекс
+          example: "101000"
+        region:
+          type: string
+          description: Область
+          example: Тверская обл.
+        district:
+          type: string
+          description: Район
+          example: р-н Черемушки
+        city:
+          type: string
+          description: Город
+          example: г. Москва
+        street:
+          type: string
+          description: Улица
+          example: ул. Остоженка
+        house:
+          type: string
+          description: Дом
+          example: "15"
+        flat:
+          type: string
+          description: Квартира/офис
+          example: кв. 9
+        addressline:
+          type: string
+          description: Полная строка адреса
+          example: "101000, Тверская обл., г. Москва, р-н Черемушки, ул. Остоженка, 15, кв. 9"
+      description: Информация об адресе получателя
+    DeliveryPoint:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Идентификатор пункта вручения
+          format: int32
+          example: 111322
+        name:
+          type: string
+          description: Наименование пункта выдачи
+          example: 099/0002/30003
+        courier:
+          type: string
+          description: Принадлежность пункта выдачи курьерской службе
+          example: sberlogistics
+        partner_name:
+          type: string
+          description: Наименование партнера курьерской службы
+          example: sber
+        vsp_sign:
+          type: boolean
+          description: Признак ВСП пункта
+          example: true
+        cfz_sign:
+          type: boolean
+          description: Признак ЦФЗ склада Самокат
+          example: false
+        code:
+          type: string
+          description: Код пункта выдачи
+          example: 0000/0003
+        type:
+          type: string
+          description: Тип пункта выдачи
+          example: point
+        address:
+          type: string
+          description: Адрес пункта выдачи
+          example: "г Москва, пр-кт Рязанский, д 44"
+        gps_location:
+          $ref: '#/components/schemas/GeoLocation'
+      description: Информация о пункте вручения
+    GeoLocation:
+      type: object
+      properties:
+        latitude:
+          type: string
+          description: Широта
+          example: "55.716233"
+        longitude:
+          type: string
+          description: Долгота
+          example: "37.791181"
+    ContactPerson:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Имя
+          example: Александр
+        secondname:
+          type: string
+          description: Отчество
+          example: Сергеевич
+        surname:
+          type: string
+          description: Фамилия
+          example: Пушкин
+        fullname:
+          type: string
+          description: ФИО
+          example: Пушкин Александр Сергеевич
+        phone:
+          type: string
+          description: Номер телефона
+          example: +7 900 000-00-00
+        email:
+          type: string
+          description: Электронный адрес
+          example: sasha1799@mail.ru
+      description: Информация о контактном лице
+    Status:
+      required:
+      - global_time
+      - status
+      type: object
+      properties:
+        status:
+          type: string
+          description: Статус отправления
+          example: CREATED
+        status_description:
+          type: string
+          description: Описание статуса отправления
+          example: Получена информация по отправлению
+        extended_description:
+          type: string
+          description: Расширенное описание статуса отправления
+          example: "Отправитель оформил заявку на доставку, но отправление еще не было передано в Сберлогистику. Отправлению присвоен уникальный идентификатор для отслеживания"
+        progress_sign:
+          type: string
+          description: Порядок статуса
+          example: FIRST
+        initiator:
+          type: string
+          description: "Инициатор события (курьерская компания, от которой было получено исходное событие)"
+          example: PickPoint
+        global_time:
+          type: string
+          description: Время и дата возникновения события
+          format: date-time
+          example: 2022-03-30T13:01:45+03:00
+        location:
+          $ref: '#/components/schemas/Location'
+        reason:
+          $ref: '#/components/schemas/Reason'
+        status_appearance_time:
+          type: string
+          description: Время и дата обработки события сервисом отслеживания
+          format: date-time
+          example: 2022-03-30T13:01:45+03:00
+        attributes:
+          $ref: '#/components/schemas/AttributesStatuses'
+      description: Информация о статусе отправления
+    Location:
+      type: object
+      properties:
+        facility:
+          $ref: '#/components/schemas/Facility'
+        location_name:
+          type: string
+          description: Наименование места возникновения события
+          example: "099/0002/30003 (код: 0000/0003)"
+        local_time:
+          type: string
+          description: Локальные время и дата возникновения события
+          format: date-time
+          example: 2022-03-30T13:01:45+03:00
+      description: Информация о месте обработки отправления
+    Reason:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Причина проблемы
+          example: refused_on_address
+        description:
+          type: string
+          description: Описание причины проблемы
+          example: Отказ от вручения на адресе
+        comment:
+          type: string
+          description: Комментарий пользователя по причине
+          example: Некомплект
+      description: Информация о проблеме
+    Facility:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Идентификатор места обработки отправления
+          format: int32
+          example: 111322
+        slug:
+          type: string
+          description: slug-идентификатор места обработки отправления
+          example: sha
+        type:
+          type: string
+          description: Тип места обработки отправления
+          example: point
+        name:
+          type: string
+          description: Наименование места обработки отправления
+          example: "099/0002/30003 (код: 0000/0003)"
+        address:
+          type: string
+          description: Адрес места обработки отправления
+          example: "г Москва, пр-кт Рязанский, д 44"
+        gps_location:
+          $ref: '#/components/schemas/GeoLocation'
+      description: Информация о месте обработки отправления
+    CreateWebhookRequest:
+      required:
+      - statuses
+      - url
+      type: object
+      properties:
+        url:
+          type: string
+          description: "URL, на который будут отправляться запросы клиенту"
+          example: http://webhook.com
+        scheme_id:
+          type: string
+          description: "Представление, по которому будет формироваться запрос клиенту"
+          example: default
+        statuses:
+          type: array
+          description: "Статусы, по которым будет производиться фильтрация"
+          example:
+          - CREATED
+          - DELIVERED
+          items:
+            type: string
+        return_included:
+          type: boolean
+          description: Признак отслеживания отправления с историей связанного возвратного отправления
+          example: true
+      description: Запрос на подписку изменения статусов отправления
+    CreateWebhookResponse:
+      required:
+      - webhook
+      type: object
+      properties:
+        request:
+          $ref: '#/components/schemas/RequestId'
+        webhook:
+          allOf:
+          - $ref: '#/components/schemas/BaseWebhookData'
+          - properties:
+              data:
+                type: array
+                items:
+                  allOf:
+                  - $ref: '#/components/schemas/TrackNumbers'
+                  - properties:
+                      statuses:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Status'
+      description: Ответ на подписку
+    BaseWebhookData:
+      required:
+      - state
+      - timestamp
+      - webhook_id
+      type: object
+      properties:
+        webhook_id:
+          type: string
+          description: Идентификатор подписки
+          format: uuid
+          example: f22e262a-2d2e-4fee-ac3d-d278a006a9f9
+        timestamp:
+          type: string
+          description: Время создания подписки
+          format: date-time
+          example: 2022-03-30T13:01:45+03:00
+        state:
+          type: string
+          description: Состояние подписки
+          example: ACTIVE
+          enum:
+          - NEW
+          - ACTIVE
+          - DELETED
+          - ERROR
+      description: Данные подписки
+    GetWebhooksResponse:
+      type: object
+      properties:
+        webhooks:
+          type: array
+          description: Массив подписок клиента
+          items:
+            $ref: '#/components/schemas/WebhookResponse'
+      description: Ответ на запрос получения списка подписок клиента
+    GetWebhookResponse:
+      type: object
+      properties:
+        webhook:
+          $ref: '#/components/schemas/WebhookResponse'
+      description: Ответ на запрос получения подписки клиента по id
+    DeleteWebhookResponse:
+      type: object
+      properties:
+        webhook:
+          $ref: '#/components/schemas/WebhookId'
+      description: Ответ на запрос удаления подписки клиента по id
+    WebhookId:
+      type: object
+      properties:
+        webhook_id:
+          type: string
+          description: Идентификатор подписки
+          format: uuid
+          example: f22e262a-2d2e-4fee-ac3d-d278a006a9f9
+        timestamp:
+          type: string
+          description: Время создания подписки
+          format: date-time
+          example: 2022-03-30T13:01:45+03:00
+      description: Параметры подписки
+    RequestId:
+      type: object
+      properties:
+        request_id:
+          type: string
+          description: Идентификатор запроса
+          format: uuid
+          example: f22e262a-2d2e-4fee-ac3d-d278a006a9f9
+        timestamp:
+          type: string
+          description: Время создания запроса подписки
+          format: date-time
+          example: 2022-03-30T13:01:45+03:00
+      description: Параметры запроса подписки
+    WebhookResponse:
+      type: object
+      description: Описание подписки для ответа клиенту
+      allOf:
+      - $ref: '#/components/schemas/BaseWebhookData'
+      - properties:
+          url:
+            type: string
+            description: "URL, на который требуется отправлять обновления по подписке"
+            example: http://webhook.com
+          scheme_id:
+            type: string
+            description: "Идентификатор схемы представления, по которому будут формироваться статусы для клиента"
+            example: default
+          statuses:
+            type: array
+            description: "Статусы, по которым будет производиться фильтрация"
+            example:
+            - CREATED
+            - DELIVERED
+            items:
+              type: string
+    ShipmentReportRequest:
+      required:
+      - ids
+      type: object
+      properties:
+        ids:
+          type: array
+          description: "Массив идентификаторов отправлений (трек-номер, клиентский номер заказа, суррогатный штрихкод (СШК) или номер телефона)"
+          example:
+          - RP257407326
+          - SLPU00381137RU
+          - SBC0008628890
+          - "79051234567"
+          items:
+            type: string
+        scheme_id:
+          type: string
+          description: Идентификатор представления
+          example: default
+        actual_only:
+          type: boolean
+          description: Признак запроса актуального статуса
+          example: false
+        search_by_phone:
+          type: boolean
+          description: Признак поиска по номеру телефона получателя
+          example: false
+        search_by_sender_phone:
+          type: boolean
+          description: Признак поиска по номеру телефона отправителя
+          example: false
+        active_only:
+          type: boolean
+          description: Признак поиска отправлений без терминальных статусов
+          example: false
+        return_included:
+          type: boolean
+          description: Признак отслеживания отправления с историей связанного возвратного отправления
+          example: true
+      description: Запрос для формирования отчета о статусах отправлений
+    ShipmentReportIdResponse:
+      type: object
+      properties:
+        report:
+          $ref: '#/components/schemas/ShipmentReportId'
+      description: Ответ с идентификатором отчета
+    ShipmentReportId:
+      type: object
+      properties:
+        report_id:
+          type: string
+          description: Идентификатор
+          format: uuid
+          example: f22e262a-2d2e-4fee-ac3d-d278a006a9f9
+        timestamp:
+          type: string
+          description: Дата и время создания отчета
+          format: date-time
+          example: 2022-03-30T13:01:45+03:00
+      description: Идентификатор отчета
+    ShipmentReportInfoResponse:
+      type: object
+      properties:
+        report:
+          $ref: '#/components/schemas/ShipmentReportInfo'
+      description: Ответ с состоянием отчета
+    ShipmentReportInfoListResponse:
+      type: object
+      properties:
+        report:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShipmentReportInfo'
+      description: Ответ с списком состояний отчетов
+    ShipmentReportInfo:
+      type: object
+      description: Информация о состоянии отчета
+      allOf:
+      - $ref: '#/components/schemas/ShipmentReportId'
+      - type: object
+        properties:
+          state:
+            $ref: '#/components/schemas/ShipmentReportState'
+    ShipmentReportDataResponse:
+      type: object
+      properties:
+        report:
+          $ref: '#/components/schemas/ShipmentReportData'
+      description: Ответ с данными отчета
+    ShipmentReportData:
+      type: object
+      description: Результат выполнения отчета
+      allOf:
+      - $ref: '#/components/schemas/ShipmentReportInfo'
+      - type: object
+        properties:
+          warning:
+            type: array
+            description: Информация по ошибкам при поиске отправлений
+            items:
+              $ref: '#/components/schemas/Warning'
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/Data'
+    ShipmentReportState:
+      type: string
+      description: "Статус запроса на отслеживание. PENDING - в очереди, IN_PROGRESS - выполняется, DONE - выполнен,  ERROR - ошибка"
+      enum:
+      - PENDING
+      - IN_PROGRESS
+      - DONE
+      - ERROR
+    RepresentationListResponse:
+      required:
+      - representation
+      type: object
+      properties:
+        representation:
+          type: array
+          items:
+            $ref: '#/components/schemas/Representation'
+      description: Массив ответов со статусами представлений
+    RepresentationResponse:
+      required:
+      - representation
+      type: object
+      properties:
+        representation:
+          $ref: '#/components/schemas/Representation'
+      description: Ответ со статусами представления
+    Representation:
+      required:
+      - description
+      - scheme_id
+      - statuses
+      type: object
+      properties:
+        scheme_id:
+          type: string
+          description: Идентификатор представления
+          example: ui_public
+        description:
+          type: string
+          description: Описание представления
+          example: "Представление для сайта и виджета компании Сберлогистика, а также для всех ресурсов компании, которым необходимо отображать отслеживание отправления в своем пользовательском интерфейсе."
+        statuses:
+          type: array
+          description: Перечень статусов представления
+          example:
+          - CREATED
+          - DELIVERED
+          items:
+            type: string
+      description: Информация о представлении
+    inline_response_200:
+      allOf:
+      - $ref: '#/components/schemas/BlockWarning'
+      - $ref: '#/components/schemas/BlockData'
+    inline_response_200_1:
+      allOf:
+      - $ref: '#/components/schemas/ShipmentReportInfoResponse'
+    inline_response_200_2:
+      allOf:
+      - $ref: '#/components/schemas/ShipmentReportInfoListResponse'
+    inline_response_200_3:
+      allOf:
+      - $ref: '#/components/schemas/ShipmentReportDataResponse'
+    inline_response_200_4:
+      allOf:
+      - $ref: '#/components/schemas/ShipmentReportIdResponse'
+    inline_response_200_5:
+      allOf:
+      - $ref: '#/components/schemas/GetWebhooksResponse'
+    inline_response_200_6:
+      allOf:
+      - $ref: '#/components/schemas/BlockWebhookData'
+    inline_response_200_7:
+      allOf:
+      - $ref: '#/components/schemas/GetWebhookResponse'
+    inline_response_200_8:
+      allOf:
+      - $ref: '#/components/schemas/DeleteWebhookResponse'
+    Packages_inner:
+      properties:
+        package_id:
+          type: string
+          description: Внутренний системный номер места
+          example: "260190372"
+        tracking_number:
+          type: string
+          description: Номер отслеживания места
+          example: RP260190372
+        surrogate_barcode:
+          type: string
+          description: Суррогатный штрихкод отправления (СШК)
+          example: SBC0000000431
+        attributes:
+          $ref: '#/components/schemas/AttributesItems'
+        status:
+          type: string
+          description: Актуальный статус места
+          example: CREATED
+        status_description:
+          type: string
+          description: Описание актуального статуса места
+          example: Получена информация по отправлению
+    Items_inner:
+      properties:
+        name:
+          type: string
+          description: Наименование товара
+          example: Шины BRIDGESTONE ALENZA 001 RUN FLAT
+        english_name:
+          type: string
+          description: Наименование товара на английском
+          example: Bridgestone Alenza 001 Run Flat 275/50R20 113W RunFlat XL
+        key:
+          type: string
+          description: Артикул товара
+          example: BR003056078
+        count:
+          type: integer
+          description: Количество заказанных единиц товара
+          format: int32
+          example: 4
+        purchased_count:
+          type: integer
+          description: Количество выкупленных единиц товара
+          format: int32
+          example: 4
+        returned_count:
+          type: integer
+          description: Количество единиц товара на возврат
+          format: int32
+          example: 0
+        price:
+          type: integer
+          description: Стоимость единицы товара (в копейках)
+          format: int32
+          example: 3574000
+        vat:
+          type: integer
+          description: НДС для товара
+          format: int32
+          example: 20
+        declared_value:
+          type: integer
+          description: Объявленная ценность/оценочная стоимость
+          format: int32
+          example: 14296000
+        barcode:
+          type: string
+          description: Штрихкод товара
+          example: BR003056078
+        markcode:
+          type: string
+          description: Маркировочный код товара
+          example: EAN406539727854
+        status:
+          type: string
+          description: "Статус выкупа товара. SOLD — полностью выкуплен, RETURN — полностью не выкуплен, PART — частично выкуплен"
+          example: PART
+          enum:
+          - SOLD
+          - RETURN
+          - PART
+        supplier:
+          $ref: '#/components/schemas/Supplier'
+    Services_inner:
+      properties:
+        name:
+          type: string
+          description: "Наименование услуги. PARTIAL_PAY — частичный выкуп, FITTING — примерка"
+          example: PARTIAL_PAY
+          enum:
+          - PARTIAL_PAY
+          - FITTING
+        price:
+          type: integer
+          description: Стоимость услуги без НДС
+          format: int32
+          example: 3574000
+        vat:
+          type: integer
+          description: НДС для услуги
+          format: int32
+          example: 20
+        price_vat:
+          type: integer
+          description: Стоимость услуги с НДС
+          format: int32
+          example: 4288800
+        need_to_pay:
+          type: boolean
+          description: Необходимость оплаты услуг при полном отказе от товаров
+          example: false
+  parameters:
+    ShipmentId:
+      name: id
+      in: path
+      description: "Трек-номер, клиентский номер заказа, суррогатный штрихкод (СШК) или номер телефона"
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+      example: RP257494384
+    ShipmentIds:
+      name: ids
+      in: query
+      description: "Список из трек-номеров, клиентских номеров заказа, СШК и телефонных номеров (до 50 значений в запросе)"
+      required: true
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+      example:
+      - RP257407326
+      - RP257494384
+      - SLPU00381137RU
+      - SBC0008628890
+      - "79051234567"
+    SchemeId:
+      name: scheme_id
+      in: query
+      description: Идентификатор представления
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: string
+        default: default
+        enum:
+        - default
+        - ui_public
+        - ui_mobile
+        - erm_default
+    SchemeIdInPath:
+      name: scheme_id
+      in: path
+      description: Идентификатор представления
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+        example: default
+    ActualOnly:
+      name: actual_only
+      in: query
+      description: Признак запроса актуального статуса
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: boolean
+        default: false
+    ActiveOnly:
+      name: active_only
+      in: query
+      description: Признак поиска отправлений без терминальных статусов
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: boolean
+        default: false
+    SearchByPhone:
+      name: search_by_phone
+      in: query
+      description: Признак поиска по номеру телефона получателя
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: boolean
+        default: false
+    SearchBySenderPhone:
+      name: search_by_sender_phone
+      in: query
+      description: Признак поиска по номеру телефона отправителя
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: boolean
+        default: false
+    ReturnIncluded:
+      name: return_included
+      in: query
+      description: Признак отслеживания отправления с историей связанного возвратного отправления
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: boolean
+        default: true
+    ReportId:
+      name: report_id
+      in: path
+      description: Идентификатор сформированного отчета на отслеживание
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+        format: UUID
+      example: f22e262a-2d2e-4fee-ac3d-d278a006a9f9
+    WebhookId:
+      name: webhook_id
+      in: path
+      description: Идентификатор подписки
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+        format: UUID
+      example: f22e262a-2d2e-4fee-ac3d-d278a006a9f9
+  examples:
+    "400_2001":
+      summary: Неверный идентификатор представления
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 400
+          code: 2001
+          error: Bad Request
+          message: Invalid scheme_id
+          path: ""
+    "400_2002":
+      summary: Неверное значение параметра возврата только актуального статуса
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 400
+          code: 2002
+          error: Bad Request
+          message: Invalid actual_only
+          path: ""
+    "400_2004":
+      summary: Превышен лимит допустимого количества отправлений при отслеживании
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 400
+          code: 2004
+          error: Bad Request
+          message: Ids limit exceeded
+          path: ""
+    "400_2005":
+      summary: Неверный формат запроса
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 400
+          code: 2005
+          error: Bad Request
+          message: Bad Request
+          path: ""
+    "400_2006":
+      summary: Неверный формат url
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 400
+          code: 2006
+          error: Bad Request
+          message: Invalid url
+          path: ""
+    "400_2007":
+      summary: Статусы недоступны в рамках запрошенного представления
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 400
+          code: 2007
+          error: Bad Request
+          message: Invalid statuses list
+          path: ""
+    "400_2008":
+      summary: Слишком короткий номер отслеживания. Длина идентификатора должна быть более трех символов
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 400
+          code: 2008
+          error: Bad Request
+          message: Invalid id length
+          path: ""
+    "400_2009":
+      summary: Номер телефона для отслеживания должен состоять из 11 или 12 цифр
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 400
+          code: 2009
+          error: Bad Request
+          message: Invalid id length
+          path: ""
+    "400_2010":
+      summary: Неверное значение параметра отслеживания по номеру телефона получателя
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 400
+          code: 2010
+          error: Bad Request
+          message: Invalid search_by_phone
+          path: ""
+    "400_2011":
+      summary: Номер отправления отсутствует в запросе
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 400
+          code: 2011
+          error: Bad Request
+          message: Invalid id
+          path: ""
+    "400_2013":
+      summary: Неверное значение параметра отслеживания по номеру телефона отправителя
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 400
+          code: 2013
+          error: Bad Request
+          message: Invalid search_by_sender_phone
+          path: ""
+    "400_2015":
+      summary: Неверное значение параметра возврата только отправлений без терминальных статусов
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 400
+          code: 2015
+          error: Bad Request
+          message: Invalid active_only
+          path: ""
+    "400_2016":
+      summary: Неверное значение параметра отслеживания отправления с историей связанного возвратного отправления
+      value:
+        error:
+          timestamp: 2022-11-30T09:10:49.562+00:00
+          status: 400
+          code: 2016
+          error: Bad Request
+          message: Invalid return_included
+          path: ""
+    "401_4003":
+      summary: Ошибка при обработке jwt-token
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 401
+          code: 4003
+          error: Unauthorized
+          message: Invalid authorization token
+          path: ""
+    "403_4005":
+      summary: Нет доступа к представлению
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 403
+          code: 4005
+          error: Forbidden
+          message: Scheme access denied
+          path: ""
+    "403_4007":
+      summary: Отсутствует или неверный идентификатор клиента
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 403
+          code: 4007
+          error: Forbidden
+          message: Invalid clientId
+          path: ""
+    "403_4010":
+      summary: Нет доступа к отслеживанию по номеру телефона
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 403
+          code: 4010
+          error: Forbidden
+          message: Search by phone access denied
+          path: ""
+    "403_4011":
+      summary: У клиента отсутствует фильтр по company_id
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 403
+          code: 4011
+          error: Forbidden
+          message: Invalid company_id
+          path: ""
+    "404_":
+      summary: Номер отправления отсутствует в запросе
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 404
+          error: Not Found
+          message: ""
+          path: ""
+    "404_4001":
+      summary: Отправление не найдено
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 404
+          code: 4001
+          error: Not Found
+          message: Shipment not found
+          path: ""
+    "404_4006":
+      summary: Отчет не найден
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 404
+          code: 4006
+          error: Not Found
+          message: Report not found
+          path: ""
+    "404_4008":
+      summary: Подписка отсутствует или неверный формат идентификатора
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 404
+          code: 4008
+          error: Not Found
+          message: Webhook not found
+          path: ""
+    "404_4012":
+      summary: Отправление не найдено (произведен запрос в режиме отслеживания с возвратными статусами)
+      value:
+        error:
+          timestamp: 2023-05-18T10:10:49.562+00:00
+          status: 404
+          code: 4012
+          error: Not Found
+          message: Shipment not found with return included
+          path: ""
+    "405_":
+      summary: Неверный метод запроса
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 405
+          error: Method Not Allowed
+          message: Request method 'POST' not supported
+          path: ""
+    "406_":
+      summary: Неверный формат ресурса
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 406
+          error: Not Acceptable
+          message: Could not find acceptable representation
+          path: ""
+    "409_4009":
+      summary: Заявленные статусы уже есть в другой подписке с такими же url и представлением
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 409
+          code: 4009
+          error: Conflict
+          message: Some statuses already included in another webhook
+          path: ""
+    "415_":
+      summary: Неверное значение content-type
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 415
+          error: Unsupported Media Type
+          message: Content type 'application/xml' not supported
+          path: ""
+    "500_":
+      summary: Ошибка работы системы
+      value:
+        error:
+          timestamp: 2021-01-21T09:10:49.562+00:00
+          status: 500
+          error: Internal Server Error
+          message: ""
+          path: ""
+  requestBodies:
+    CreateWebhookRequest:
+      description: Запрос на добавление подписки
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateWebhookRequest'
+      required: true
+    ShipmentReportCreateRequest:
+      description: Запрос на создание отчета
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ShipmentReportRequest'
+      required: true
+  securitySchemes:
+    ProdEnvironment:
+      type: oauth2
+      description: "**Для авторизации в продуктовой среде (Prod) необходимы регистрационные данные, выданные Сберлогистикой:<p>- идентификатор клиентской системы <code>client_id</code></p><p>- секретный ключ клиентской системы <code>client_secret</code></p>**"
+      flows:
+        clientCredentials:
+          tokenUrl: https://authlive.sblogistica.ru/auth/realms/public/protocol/openid-connect/token
+          scopes: {}
+    TestEnvironment:
+      type: oauth2
+      description: "**Для авторизации в тестовой среде (Test) необходимы регистрационные данные, выданные Сберлогистикой:<p>- идентификатор клиентской системы <code>client_id</code></p><p>- секретный ключ клиентской системы <code>client_secret</code></p>**"
+      flows:
+        clientCredentials:
+          tokenUrl: https://authtest.sblogistica.ru/auth/realms/public/protocol/openid-connect/token
+          scopes: {}
